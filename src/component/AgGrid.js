@@ -1,14 +1,15 @@
 import React, { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import { AgGridReact } from "ag-grid-react"; // React Data Grid Component
 import "ag-grid-community/styles/ag-grid.css"; // Mandatory CSS required by the Data Grid
-import "ag-grid-community/styles/ag-theme-quartz.css";
+import "ag-grid-community/styles/ag-theme-alpine.css";
 import "ag-grid-enterprise";
+import { FakeServer } from "./fakeServer.jsx";
 
 const CustomCellRenderer = p => {
-    const onPrint = useCallback(() => window.alert(p.value));
+    // const onPrint = useCallback(() => window.alert(p.value));
     return (
         <>
-            <button onClick={onPrint} style={{ marginRight: "10px" }}>{p.buttonText}</button>
+            {/* <button onClick={onPrint} style={{ marginRight: "10px" }}>{p.buttonText}</button> */}
             <span>{p.value}</span>
         </>
     )
@@ -17,69 +18,221 @@ const CustomCellRenderer = p => {
 const Push = p => {
     const onPrint = useCallback(() => window.alert(p.value));
     return (
-        <><button onClick={onPrint}>Push</button>{p.value}</>
+        <><button onClick={onPrint}>Add</button> {p.value}</>
     )
 }
 const AgGrid = () => {
     const gridRef = useRef();
-    console.log(gridRef);
+    const [gridApi, setGridApi] = useState(null);
+    console.log("GRID REF", gridApi);
     const defaultColDef = useMemo(() => {
         return {
-            // flex: 1,
             filter: true,
             sortable: true,
-            enableRowGroup: true
         }
     });
-    const [rowData, setRowData] = useState([]);
-    const [colDefs, setColDefs] = useState([
+    const [colDefs] = useState([
         {
-            field: "athlete",
-            lockPosition: true,
-            cellClassRules: { "green": p => p.value },
-            cellRenderer: CustomCellRenderer,
-            pinned: "left",
-            cellRendererParams: {
-                buttonText: "@"
-            },
+            headerName: "GROUP A",
+            groupId: "groupA",
+            marryChildren: true,
+            children: [
+                {
+                    field: "athlete",
+                    lockPosition: true,
+                    width: 200,
+                    maxWidth: 200,
+                    cellRenderer: CustomCellRenderer,
+                    // cellRendererParams: {
+                    //     buttonText: "Add"
+                    // },
+                },
+                {
+                    field: "age",
+                    width: 220,
+                },
+                {
+                    field: "country",
+                    width: 220,
+                },
+            ]
         },
-        { field: "age" },
-        { field: "country" },
-        { field: "year" },
-        { field: "date" },
-        { field: "sport" },
         {
-            field: "gold",
-            cellRendererSelector: p => {
-                console.log("selector", p);
-                if (p.value == 2) {
-                    return { component: Push }
-                }
-                if (p.value == 3) {
-                    return <p>Cancel</p>
-                }
-            }
+            headerName: "GROUP B",
+            groupId: "groupB",
+            marryChildren: true,
+            children: [
+                {
+                    field: "year",
+                    width: 180,
+                },
+                {
+                    field: "date",
+                    width: 180,
+                },
+                {
+                    field: "sport",
+                    width: 180,
+                },
+            ]
         },
-        { field: "silver" },
-        { field: "bronze" },
-        { field: "total" }
+        {
+            headerName: "GROUP C",
+            groupId: "groupC",
+            marryChildren: true,
+            children: [
+                {
+                    field: "gold",
+                    width: 120,
+                    value: null,
+                    cellRendererSelector: p => {
+                        return {
+                            component: Push
+                        }
+                    }
+                },
+                {
+                    field: "silver",
+                    width: 120,
+                },
+                {
+                    field: "bronze",
+                    width: 120,
+                },
+                {
+                    field: "total",
+                    width: 120,
+                }
+            ]
+        },
     ]);
 
-    useEffect(() => {
+    // Create the server-side data source
+    // const getServerSideDatasource = () => {
+    //     return {
+    //         getRows: (params) => {
+    //             // Fetch data from JSONPlaceholder with pagination and sorting
+    //             fetch(`https://www.ag-grid.com/example-assets/olympic-winners.json`)
+    //                 .then((response) => response.json())
+    //                 .then((data) => {
+    //                     if (!Array.isArray(data)) {
+    //                         console.error('Data is not an array:', data);
+    //                         params.fail(); // Stop loading if data is not valid
+    //                         return;
+    //                     }
+    //                     params.success({ rowData: data, rowCount: data.length }); // Static total row count
+    //                 })
+    //                 .catch((error) => {
+    //                     console.error("ERROR", error);
+    //                     params.fail(); // Use failCallback for errors
+    //                 });
+    //         }
+    //     };
+    // };
+
+    const getServerSideDatasource = (server) => {
+        return {
+            getRows: (params) => {
+                console.log("[Datasource] - rows requested by grid: ", params.request);
+                var response = server.getData(params.request);
+                // adding delay to simulate real server call
+                setTimeout(() => {
+                    if (response.success) {
+                        // call the success callback
+                        params.success({
+                            rowData: response.rows,
+                            rowCount: response.lastRow,
+                        });
+                    } else {
+                        // inform the grid request failed
+                        params.fail();
+                    }
+                }, 200);
+            },
+        };
+    };
+
+    // When grid is ready, set the server-side data source
+    const onGridReady = (params) => {
+        if (params?.api) {
+            setGridApi(params?.api);
+        }
         fetch("https://www.ag-grid.com/example-assets/olympic-winners.json")
-            .then(result => result.json())
-            .then(rowData => setRowData(rowData));
-    }, []);
+            .then((resp) => resp.json())
+            .then((data) => {
+                // add id to data
+                var idSequence = 1;
+                data.forEach(function (item) {
+                    item.id = idSequence++;
+                });
+                // setup the fake server with entire dataset
+                var fakeServer = new FakeServer(data);
+                // create datasource with a reference to the fake server
+                var datasource = getServerSideDatasource(fakeServer);
+                // register the datasource with the grid
+                params.api.setGridOption("serverSideDatasource", datasource);
+            });
+    };
+
+    const saveColumnState = useCallback(() => {
+        if (gridApi) {
+            const columnState = gridApi?.getColumnState();
+            localStorage.setItem("columnState", JSON.stringify(columnState));
+        }
+    }, [gridApi]);
+
+    useEffect(() => {
+        const columnState = localStorage.getItem("columnState");
+        const columnDef = JSON.parse(columnState);
+        if (gridApi) {
+            gridApi.applyColumnState({
+                state: columnDef,
+                sort: null,
+                applyOrder: true
+            });
+        }
+    }, [gridApi]);
+
+    const resetColumnState = () => {
+        const columnState = localStorage.getItem("resetColumnState");
+        const columnDef = JSON.parse(columnState);
+        if (gridApi) {
+            gridApi.applyColumnState({
+                state: columnDef,
+                sort: null,
+                applyOrder: true
+            });
+        }
+    }
+    const onColumnMoved = useCallback(() => {
+        saveColumnState();
+    }, [saveColumnState]);
+
+    const onColumnResized = useCallback(() => {
+        saveColumnState();
+    }, [saveColumnState]);
+
+    const onColumnVisible = useCallback(() => {
+        saveColumnState();
+    }, [saveColumnState]);
 
     return (
-        <div className="ag-theme-quartz" style={{ height: 500, width: "80%" }}>
-            <AgGridReact
-                rowGroupPanelShow="always"
-                ref={gridRef}
-                rowData={rowData}
-                columnDefs={colDefs}
-                defaultColDef={defaultColDef}
-            />
+        <div>
+            <button onClick={resetColumnState}>Reset Column</button>
+            <div className="ag-theme-alpine" style={{ height: 500, width: "100%" }}>
+                <AgGridReact
+                    ref={gridRef}
+                    columnDefs={colDefs}
+                    defaultColDef={defaultColDef}
+                    pagination={true}
+                    rowModelType="serverSide"
+                    maintainColumnOrder
+                    onGridReady={onGridReady}
+                    onColumnMoved={onColumnMoved}
+                    onColumnResized={onColumnResized}
+                    onColumnVisible={onColumnVisible}
+                />
+            </div>
         </div>
     )
 };
