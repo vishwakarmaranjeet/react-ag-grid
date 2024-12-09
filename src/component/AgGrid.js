@@ -6,11 +6,11 @@ import "ag-grid-enterprise";
 import { FakeServer } from "./fakeServer.jsx";
 
 const CustomCellRenderer = p => {
-    // const onPrint = useCallback(() => window.alert(p.value));
+    const onPrint = useCallback(() => window.alert(p.value));
     return (
         <>
-            {/* <button onClick={onPrint} style={{ marginRight: "10px" }}>{p.buttonText}</button> */}
-            <span>{p.value}</span>
+            <button onClick={onPrint} style={{ marginRight: "10px" }}>{p.buttonText}</button>
+            <span>{p.value}sss</span>
         </>
     )
 };
@@ -25,104 +25,62 @@ const AgGrid = () => {
     const gridRef = useRef();
     const [gridApi, setGridApi] = useState(null);
     console.log("GRID REF", gridApi);
+    const [colDefs, setColDefs] = useState([]);
+
+    useEffect(() => {
+        const fetchColumnDefs = async () => {
+            try {
+                const response = await fetch("http://localhost:3000/columnDefinition.json");
+                const data = await response.json();
+                // Dynamically register custom cell renderers
+                const componentMap = {
+                    CustomCellRenderer,
+                    Push
+                };
+                const comparatorMap = {
+                    numericComparator: (valueA, valueB) => {
+                        return valueA - valueB;  // Numeric sorting
+                    },
+                    stringComparator: (valueA, valueB) => {
+                        return valueA.localeCompare(valueB);  // String sorting
+                    }
+                };
+                // Role-based logic: Viewer should not see "gold" column
+                const userRole = "viewer";
+                const updatedColDefs = data.map(group => ({
+                    ...group,
+
+                    children: group.children
+                        // Filter or hide logic for columns
+                        .filter(child => {
+                            if (userRole === "viewer" && child.field === "goldd") return false; // Remove 'gold' for viewers
+                            return true;
+                        })
+                        .map(child => ({
+                            ...child,
+                            cellRenderer: typeof child.cellRenderer === "string" && componentMap[child.cellRenderer]
+                                ? componentMap[child.cellRenderer]
+                                : child.cellRenderer,
+                            // Map comparator dynamically
+                            comparator: typeof child.comparator === "string" && comparatorMap[child.comparator]
+                                ? comparatorMap[child.comparator]
+                                : child.comparator
+                        }))
+                }));
+                setColDefs(updatedColDefs);
+            } catch (error) {
+                console.error("Error loading column definition", error);
+            }
+        }
+
+        fetchColumnDefs();
+    }, []);
     const defaultColDef = useMemo(() => {
         return {
             filter: true,
             sortable: true,
         }
     });
-    const [colDefs] = useState([
-        {
-            headerName: "GROUP C",
-            groupId: "groupDD",
-            marryChildren: true,
-            children: [
-                {
-                    headerName: '',
-                    field: 'checkbox',
-                    pinned: "left",
-                    lockPosition: true,
-                    sortable: false,
-                    width: 50, // Width of the checkbox column
-                    headerCheckboxSelection: true, // ✅ Show checkbox in the header
-                    checkboxSelection: true, // ✅ Show checkbox in each row
-                    suppressHeaderMenuButton: true // Hide menu for the checkbox column
-                },
-            ]
-        },
-        {
-            headerName: "GROUP A",
-            groupId: "groupA",
-            marryChildren: true,
-            children: [
-                {
-                    field: "athlete",
-                    lockPosition: true,
-                    pinned: "left",
-                    width: 200,
-                    cellRenderer: CustomCellRenderer,
-                    cellRendererParams: {
-                        buttonText: "Add"
-                    },
-                },
-                {
-                    field: "age",
-                    width: 220,
-                },
-                {
-                    field: "country",
-                    width: 220,
-                },
-            ]
-        },
-        {
-            headerName: "GROUP B",
-            groupId: "groupB",
-            marryChildren: true,
-            children: [
-                {
-                    field: "year",
-                    width: 180,
-                },
-                {
-                    field: "date",
-                    width: 180,
-                },
-                {
-                    field: "sport",
-                    width: 180,
-                },
-            ]
-        },
-        {
-            headerName: "GROUP C",
-            groupId: "groupC",
-            marryChildren: true,
-            children: [
-                {
-                    field: "gold",
-                    width: 120,
-                    cellRendererSelector: p => {
-                        return {
-                            component: Push
-                        }
-                    }
-                },
-                {
-                    field: "silver",
-                    width: 120,
-                },
-                {
-                    field: "bronze",
-                    width: 120,
-                },
-                {
-                    field: "total",
-                    width: 120,
-                }
-            ]
-        },
-    ]);
 
     // Create the server-side data source
     // const getServerSideDatasource = () => {

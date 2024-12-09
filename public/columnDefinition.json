@@ -1,0 +1,63 @@
+[
+    {
+      "headerName": "GROUP C",
+      "groupId": "groupDD",
+      "marryChildren": true,
+      "children": [
+        {
+          "headerName": "",
+          "field": "checkbox",
+          "pinned": "left",
+          "lockPosition": true,
+          "sortable": false,
+          "width": 50,
+          "headerCheckboxSelection": true,
+          "checkboxSelection": true,
+          "suppressHeaderMenuButton": true
+        }
+      ]
+    },
+    {
+      "headerName": "GROUP A",
+      "groupId": "groupA",
+      "marryChildren": true,
+      "children": [
+        {
+          "field": "athlete",
+          "lockPosition": true,
+          "pinned": "left",
+          "width": 200,
+          "cellRenderer": "CustomCellRenderer",
+          "cellRendererParams": { "buttonText": "Add" }
+        },
+        { "field": "age", "width": 220 },
+        { "field": "country", "width": 220 }
+      ]
+    },
+    {
+      "headerName": "GROUP B",
+      "groupId": "groupB",
+      "marryChildren": true,
+      "children": [
+        { "field": "year", "width": 180 },
+        { "field": "date", "width": 180 },
+        { "field": "sport", "width": 180 }
+      ]
+    },
+    {
+      "headerName": "GROUP C",
+      "groupId": "groupC",
+      "marryChildren": true,
+      "children": [
+        {
+          "field": "gold",
+          "width": 120,
+          "cellRenderer": "Push",
+          "comparator": "numericComparator"
+        },
+        { "field": "silver", "width": 120 },
+        { "field": "bronze", "width": 120 },
+        { "field": "total", "width": 120 }
+      ]
+    }
+] 
