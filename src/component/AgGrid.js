@@ -188,6 +188,7 @@ const AgGrid = () => {
             gridApi.applyColumnState({
                 state: columnDef,
                 sort: null,
+                applyWidths: true,
                 applyOrder: true
             });
         }
@@ -200,6 +201,7 @@ const AgGrid = () => {
             gridApi.applyColumnState({
                 state: columnDef,
                 sort: null,
+                applyWidths: true,
                 applyOrder: true
             });
         }
