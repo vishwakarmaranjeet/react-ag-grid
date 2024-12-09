@@ -46,7 +46,7 @@ const AgGrid = () => {
                     width: 50, // Width of the checkbox column
                     headerCheckboxSelection: true, // ✅ Show checkbox in the header
                     checkboxSelection: true, // ✅ Show checkbox in each row
-                    suppressMenu: true // Hide menu for the checkbox column
+                    suppressHeaderMenuButton: true // Hide menu for the checkbox column
                 },
             ]
         },
@@ -61,9 +61,9 @@ const AgGrid = () => {
                     pinned: "left",
                     width: 200,
                     cellRenderer: CustomCellRenderer,
-                    // cellRendererParams: {
-                    //     buttonText: "Add"
-                    // },
+                    cellRendererParams: {
+                        buttonText: "Add"
+                    },
                 },
                 {
                     field: "age",
@@ -102,7 +102,6 @@ const AgGrid = () => {
                 {
                     field: "gold",
                     width: 120,
-                    value: null,
                     cellRendererSelector: p => {
                         return {
                             component: Push
@@ -236,6 +235,7 @@ const AgGrid = () => {
         saveColumnState();
     }, [saveColumnState]);
 
+    const getRowId = (params) => `${params.data.id}`;
     return (
         <div>
             <button onClick={resetColumnState}>Reset Column</button>
@@ -253,6 +253,7 @@ const AgGrid = () => {
                     onColumnMoved={onColumnMoved}
                     onColumnResized={onColumnResized}
                     onColumnVisible={onColumnVisible}
+                    getRowId={getRowId}
                 />
             </div>
         </div>
