@@ -33,6 +33,24 @@ const AgGrid = () => {
     });
     const [colDefs] = useState([
         {
+            headerName: "GROUP C",
+            groupId: "groupDD",
+            marryChildren: true,
+            children: [
+                {
+                    headerName: '',
+                    field: 'checkbox',
+                    pinned: "left",
+                    lockPosition: true,
+                    sortable: false,
+                    width: 50, // Width of the checkbox column
+                    headerCheckboxSelection: true, // ✅ Show checkbox in the header
+                    checkboxSelection: true, // ✅ Show checkbox in each row
+                    suppressMenu: true // Hide menu for the checkbox column
+                },
+            ]
+        },
+        {
             headerName: "GROUP A",
             groupId: "groupA",
             marryChildren: true,
@@ -40,8 +58,8 @@ const AgGrid = () => {
                 {
                     field: "athlete",
                     lockPosition: true,
+                    pinned: "left",
                     width: 200,
-                    maxWidth: 200,
                     cellRenderer: CustomCellRenderer,
                     // cellRendererParams: {
                     //     buttonText: "Add"
@@ -228,6 +246,8 @@ const AgGrid = () => {
                     defaultColDef={defaultColDef}
                     pagination={true}
                     rowModelType="serverSide"
+                    suppressRowClickSelection={true} // ✅ Prevent row click from selecting
+                    rowSelection="multiple" // ✅ Multiple row selection enabled
                     maintainColumnOrder
                     onGridReady={onGridReady}
                     onColumnMoved={onColumnMoved}
