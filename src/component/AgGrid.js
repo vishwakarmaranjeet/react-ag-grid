@@ -24,6 +24,8 @@ const Push = p => {
 const AgGrid = () => {
     const gridRef = useRef();
     const [gridApi, setGridApi] = useState(null);
+    const [pageSize, setPageSize] = useState(50);
+    const [name, setName] = useState("");
     console.log("GRID REF", gridApi);
     const [colDefs, setColDefs] = useState([]);
 
@@ -105,10 +107,15 @@ const AgGrid = () => {
     //     };
     // };
 
-    const getServerSideDatasource = (server) => {
+    const getServerSideDatasource = (server, name) => {
         return {
             getRows: (params) => {
-                console.log("[Datasource] - rows requested by grid: ", params.request);
+            const { startRow, endRow, sortModel, filterModel } = params.request;
+            const pageSize = endRow - startRow;
+            const page = Math.floor(startRow / pageSize);
+            console.log("STATE VARIABLES", name);
+            console.log("[Datasource] - rows requested by grid: ", page, sortModel, filterModel);
+            console.log("[Datasource] - rows requested by grid: ", params.request);
                 var response = server.getData(params.request);
                 // adding delay to simulate real server call
                 setTimeout(() => {
@@ -143,7 +150,7 @@ const AgGrid = () => {
                 // setup the fake server with entire dataset
                 var fakeServer = new FakeServer(data);
                 // create datasource with a reference to the fake server
-                var datasource = getServerSideDatasource(fakeServer);
+                var datasource = getServerSideDatasource(fakeServer, name);
                 // register the datasource with the grid
                 params.api.setGridOption("serverSideDatasource", datasource);
             });
@@ -194,6 +201,14 @@ const AgGrid = () => {
     }, [saveColumnState]);
 
     const getRowId = (params) => `${params.data.id}`;
+
+    const onPaginationChanged = (params) => {
+        const currentPage = params.api.paginationGetCurrentPage();
+        const pageSize = params.api.paginationGetPageSize();
+        console.log(`Current Page: ${currentPage + 1}, Page Size: ${pageSize}`);;
+        setPageSize(params.api.paginationGetPageSize());
+        setName("Hundred");
+    };
     return (
         <div>
             <button onClick={resetColumnState}>Reset Column</button>
@@ -203,6 +218,10 @@ const AgGrid = () => {
                     columnDefs={colDefs}
                     defaultColDef={defaultColDef}
                     pagination={true}
+                    cacheBlockSize={pageSize}
+                    paginationPageSize={pageSize}
+                    paginationPageSizeSelector={[50, 75, 100, 200]}
+                    paginationAutoPageSize={false}
                     rowModelType="serverSide"
                     suppressRowClickSelection={true} // ✅ Prevent row click from selecting
                     rowSelection="multiple" // ✅ Multiple row selection enabled
@@ -211,6 +230,7 @@ const AgGrid = () => {
                     onColumnMoved={onColumnMoved}
                     onColumnResized={onColumnResized}
                     onColumnVisible={onColumnVisible}
+                    onPaginationChanged={onPaginationChanged}
                     getRowId={getRowId}
                 />
             </div>
