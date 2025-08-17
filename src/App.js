@@ -1,4 +1,3 @@
-import logo from './logo.svg';
 import AgGrid from './component/AgGrid';
 import './App.css';
 
